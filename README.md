@@ -6,4 +6,4 @@
 - на сервере должен находиться SSH ключ в файле `/root/.ssh/authorized_keys`
 - при выполнении данного скрипта вы использовать пользователя `root`
 ## Команда для выполнения скрипта
-`curl -fsSL https://git.io/ -o installer.sh && sh installer.sh`
+`curl -fsSL https://git.io/fhj9C -o setup.sh && sh setup.sh`

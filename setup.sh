@@ -1,11 +1,24 @@
+# Версия скрипта
+VERSION=0.1.0
 # Последняя версия Docker-Compose
 DOCKER_COMPOSE_VERSION=1.23.2
+
+# Версия скрипта
+echo "\n\nlinux-initial-setup v$VERSION"
+read -p "Вы уверены, что хотите запустить данный скрипт? Ознакомьтесь, как он работает на https://git.io/fhj9t (y/N) " decision
+if [ "$decision" = "y" ] || [ "$decision" = "Y" ]; then
+  :
+else
+  exit
+fi
+
 # Проверяем операционную систему
 case $(lsb_release -is) in
   "Debian" ) DISTRIBUTION="debian";;
   "Ubuntu" ) DISTRIBUTION="ubuntu";;
-  * ) echo "### Этот скрипт может работать только с операционными системами Debian и Ubuntu :(" && exit;;
+  * ) echo "\n\n### Этот скрипт может работать только с операционными системами Debian и Ubuntu :(" && exit;;
 esac
+
 # Архитектура машины
 case $(uname -m) in
   "x86_64" ) ARCHITECTURE="amd64";;
@@ -13,7 +26,7 @@ case $(uname -m) in
 esac
 
 # Обновление все пакетов
-echo "### Обновление всех пакетов ..."
+echo "\n\n### Обновление всех пакетов ..."
 apt-get update && apt-get upgrade -y && apt-get dist-upgrade -y && apt-get autoclean -y && apt-get autoremove -y
 
 # Установка рекомендуемых и необходимых пакетов
@@ -71,5 +84,5 @@ echo "\033[0;31m### Помните: этот скрипт предназначе
 rm installer.sh
 read -p "Хотите ли вы переавторизироваться в системе как пользователь $username? (y/N) " decision
 if [ "$decision" = "y" ] || [ "$decision" = "Y" ]; then
-  su $username && cd ~
+  su $username
 fi
