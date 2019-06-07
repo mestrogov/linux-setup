@@ -1,9 +1,9 @@
-# Описание
-Этот скрипт предназначен для начальной настройки сервера, на котором установлен Debian или Ubuntu. В нем выполняется то, что, как мне кажется, необходимо для абсолютно любого сервера.
+# Linux Server Setup
+This script is intended for installing the most needed things on Debian or Ubuntu server and further maintenance. During the setup you can choose what the script should install and what should not.
 
-# Использование
-## Требования для корректной работы скрипта
-- на сервере должен находиться SSH ключ в файле `/root/.ssh/authorized_keys`
-- при выполнении данного скрипта вы использовать пользователя `root`
-## Команда для выполнения скрипта
-`curl -fsSL https://git.io/fhj9C -o setup.sh && sh setup.sh`
+# Usage
+You have to be in system as root and then execute the command:
+`curl -fsSL https://git.io/fjz2w -o setup.sh && chmod +x setup.sh && ./setup.sh`
+
+# License
+All code in this repository is licensed under the terms of the `MIT License`. For further information please refer to the `LICENSE` file.
