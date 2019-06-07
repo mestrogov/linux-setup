@@ -34,9 +34,9 @@ function installation {
     echo "I need to ask you a few questions."
     echo "You can leave the default options and just press enter if you are OK with them."
 
-    if [ -e "/root/.linux_setup_installation_executed" ]; then
+    if [ -e "/root/.linux_setup_installation" ]; then
         echo ""
-        echo "Installation proccess has been run before, do you want to run it again?"
+        echo "An installation proccess has been run before, do you want to run it again?"
         echo "WARNING: Running installation proccess multiple times can cause abnormal situations."
         echo "    1) Default: no"
         echo "    2) Yes"
@@ -220,8 +220,8 @@ function installation {
         ;;
     esac
 
-    # Сreate a file so the script can determine that installation proccess has been executed before
-    touch "/root/.linux_setup_installation_executed"
+    # Сreate a file so the script can determine that an installation proccess has been run before
+    touch "/root/.linux_setup_installation"
 
     if [ ! -z "$NEW_USERNAME" ]; then
         echo ""
