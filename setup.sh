@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION=0.2.0
+VERSION=0.2.1
 DOCKER_COMPOSE_VERSION=1.24.0
 
 function isRoot {
@@ -81,12 +81,14 @@ function installation {
     case $PACKAGES_CHOICE in
         "1")
             echo "### Default packages ($DEFAULT_PACKAGES) are being installed ..."
+            # shellcheck disable=SC2086
             apt-get install -y $DEFAULT_PACKAGES
         ;;
         "2")
         ;;
         *)
             echo "### Specified packages ($PACKAGES_CHOICE) are being installed ..."
+            # shellcheck disable=SC2086
             apt-get install -y $PACKAGES_CHOICE
         ;;
     esac
@@ -102,10 +104,10 @@ function installation {
     done
     case $CRON_CHOICE in
         1)
-            if [ ! -z $(grep "$CRONTAB_UPGRADE_STRING" "/etc/crontab") ]; then
-                printf "\n# Packages upgrading\n$CRONTAB_UPGRADE_STRING" >> /etc/crontab
+            if ! grep -Fq "$CRONTAB_UPGRADE_STRING" "/etc/crontab"; then
+                printf "\n# Packages upgrading\n%s" "$CRONTAB_UPGRADE_STRING" >> /etc/crontab
             else
-                echo "The packages upgrade command has been already added to the crontab, command wasn't added a second time."
+                echo "The packages upgrade command has been already added to the crontab, the command wasn't added a second time."
             fi
         ;;
         2)
@@ -143,7 +145,7 @@ function installation {
                 sed -i 's/#PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config
                 service ssh restart
             else
-                echo "You don't have a public key in /root/.ssh/authorized_keys, password authentication wasn't disabled."
+                echo "You don't have a public key in /root/.ssh/authorized_keys, password authentication can't be disabled."
             fi
         ;;
         2)
@@ -161,12 +163,12 @@ function installation {
     case $USER_CHOICE in
         1)
             if [ -e "/root/.ssh/authorized_keys" ]; then
-                read -p "Choose a name for a new user: " NEW_USERNAME
-                adduser --disabled-password --gecos "" $NEW_USERNAME && usermod -aG sudo $NEW_USERNAME
-                rsync --archive --chown=$NEW_USERNAME:$NEW_USERNAME ~/.ssh /home/$NEW_USERNAME
+                read -rp "Specify a name for a new user: " NEW_USERNAME
+                adduser --disabled-password --gecos "" "$NEW_USERNAME" && usermod -aG sudo "$NEW_USERNAME"
+                rsync --archive --chown="$NEW_USERNAME:$NEW_USERNAME" ~/.ssh "/home/$NEW_USERNAME"
                 echo "$NEW_USERNAME ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
             else
-                echo "You don't have public key authentication enabled, a new user with no password wasn't created."
+                echo "You don't have public key authentication enabled, a new user with no password can't be created."
             fi
         ;;
         2)
@@ -197,7 +199,7 @@ function installation {
             curl -fsSL "https://download.docker.com/linux/$DISTRIBUTION/gpg" | apt-key add -
             add-apt-repository "deb [arch=$ARCHITECTURE] https://download.docker.com/linux/$DISTRIBUTION $(lsb_release -cs) stable"
             apt-get update && apt-get install -y docker-ce docker-ce-cli containerd.io
-            usermod -aG docker $NEW_USERNAME
+            usermod -aG docker "$NEW_USERNAME"
         ;;
         2)
         ;;
@@ -223,7 +225,7 @@ function installation {
     # Сreate a file so the script can determine that an installation proccess has been run before
     touch "/root/.linux_setup_installation"
 
-    if [ ! -z "$NEW_USERNAME" ]; then
+    if [ -n "$NEW_USERNAME" ]; then
         echo ""
         echo "Do you want to continue using system as $NEW_USERNAME?"
         echo "    1) Default: yes"
@@ -232,7 +234,7 @@ function installation {
             read -rp "Please choose the right option for you [1-2]: " -e -i 1 SU_CHOICE
         done
         case $SU_CHOICE in
-            1) su $NEW_USERNAME;;
+            1) su - "$NEW_USERNAME";;
             2);;
         esac
     fi
