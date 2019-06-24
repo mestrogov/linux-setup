@@ -1,7 +1,7 @@
 #!/bin/bash
 
-VERSION=0.2.1
-DOCKER_COMPOSE_VERSION=1.24.0
+VERSION=0.2.2
+DOCKER_COMPOSE_VERSION=1.24.1
 
 function isRoot {
     if [ "$EUID" -ne 0 ]; then
@@ -76,20 +76,24 @@ function installation {
     echo "Do you want to install any additional packages?"
     echo "INFO: You can install any other packages just by specifying them with space after each (e.g. mosh vnstat) instead of the number of option."
     echo "    1) Default: $DEFAULT_PACKAGES"
-    echo "    2) Don't install anything"
-    read -rp "Please choose the right option for you: " -e -i 1 PACKAGES_CHOICE
+    echo "    2) Don't install any packages"
+    echo "    3) Other packages"
+    until [[ "$PACKAGES_CHOICE" =~ ^[1-3]$ ]]; do
+        read -rp "Please choose the right option for you [1-3]: " -e -i 1 PACKAGES_CHOICE
+    done
     case $PACKAGES_CHOICE in
-        "1")
+        1)
             echo "### Default packages ($DEFAULT_PACKAGES) are being installed ..."
             # shellcheck disable=SC2086
             apt-get install -y $DEFAULT_PACKAGES
         ;;
-        "2")
+        2)
         ;;
-        *)
-            echo "### Specified packages ($PACKAGES_CHOICE) are being installed ..."
+        3)
+            read -rp "Please specify packages' names you want to install (with space after each): " -e SPECIFIED_PACKAGES
+            echo "### Specified packages ($SPECIFIED_PACKAGES) are being installed ..."
             # shellcheck disable=SC2086
-            apt-get install -y $PACKAGES_CHOICE
+            apt-get install -y $SPECIFIED_PACKAGES
         ;;
     esac
 
