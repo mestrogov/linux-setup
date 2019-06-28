@@ -119,7 +119,8 @@ function installation {
     esac
 
     echo ""
-    echo "Do you want to install UFW and set it up (block all ports except OpenSSH and Mosh)?"
+    echo "Do you want to install UFW (firewall) and set it up (disallow all ports except OpenSSH and Mosh)?"
+    echo "WARNING: It may disrupt existing SSH connections."
     echo "    1) Default: yes"
     echo "    2) No"
     until [[ "$UFW_CHOICE" =~ ^[1-2]$ ]]; do
@@ -128,7 +129,7 @@ function installation {
     case $UFW_CHOICE in
         1)
             apt-get install -y ufw
-            ufw allow 22 && ufw allow 60000:61000/udp && ufw enable
+            ufw allow 22 && ufw allow 60000:61000/udp && ufw --force enable
         ;;
         2)
         ;;
