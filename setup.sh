@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION=0.2.2
+VERSION=0.3.0
 DOCKER_COMPOSE_VERSION=1.24.1
 
 function isRoot {
@@ -97,21 +97,42 @@ function installation {
         ;;
     esac
 
-    CRONTAB_UPGRADE_STRING="42 3    * * *    root    apt-get update && apt-get upgrade -y && apt-get autoclean -y && apt-get autoremove -y"
+    CRONTAB_PACKAGES_UPGRADE_STRING="25 3    * * *    root    apt-get update && apt-get upgrade -y && apt-get autoremove -y && apt-get autoclean -y"
     echo ""
-    echo "Do you want to upgrade packages everyday (without adding/removing any)?"
-    echo "INFO: Packages will be upgraded everyday at 03:42 at night, the upgrade command will be added to the crontab."
+    echo "Do you want to upgrade packages daily (without adding/removing any)?"
+    echo "INFO: Packages will be upgraded daily at 03:25, the command will be added to the crontab."
     echo "    1) Default: yes"
     echo "    2) No"
-    until [[ "$CRON_CHOICE" =~ ^[1-2]$ ]]; do
-        read -rp "Please choose the right option for you [1-2]: " -e -i 1 CRON_CHOICE
+    until [[ "$CRON_PACKAGES_CHOICE" =~ ^[1-2]$ ]]; do
+        read -rp "Please choose the right option for you [1-2]: " -e -i 1 CRON_PACKAGES_CHOICE
     done
-    case $CRON_CHOICE in
+    case $CRON_PACKAGES_CHOICE in
         1)
-            if ! grep -Fq "$CRONTAB_UPGRADE_STRING" "/etc/crontab"; then
-                printf "\n# Packages upgrading\n%s" "$CRONTAB_UPGRADE_STRING" >> /etc/crontab
+            if ! grep -Fq "$CRONTAB_PACKAGES_UPGRADE_STRING" "/etc/crontab"; then
+                printf "\n# Upgrade packages\n%s" "$CRONTAB_PACKAGES_UPGRADE_STRING" >> /etc/crontab
             else
                 echo "The packages upgrade command has been already added to the crontab, the command wasn't added a second time."
+            fi
+        ;;
+        2)
+        ;;
+    esac
+
+    CRONTAB_SYSTEM_UPGRADE_STRING="47 4    * * 7    root    apt-get update && apt-get dist-upgrade -y && apt-get autoremove -y && apt-get autoclean -y && reboot"
+    echo ""
+    echo "Do you want to upgrade system weekly and reboot it after the completion?"
+    echo "INFO: System will be upgraded on Sundays at 04:47, the command will be added to the crontab."
+    echo "    1) Default: yes"
+    echo "    2) No"
+    until [[ "$CRON_SYSTEM_CHOICE" =~ ^[1-2]$ ]]; do
+        read -rp "Please choose the right option for you [1-2]: " -e -i 1 CRON_SYSTEM_CHOICE
+    done
+    case $CRON_SYSTEM_CHOICE in
+        1)
+            if ! grep -Fq "$CRONTAB_SYSTEM_UPGRADE_STRING" "/etc/crontab"; then
+                printf "\n# Upgrade system\n%s" "$CRONTAB_SYSTEM_UPGRADE_STRING" >> /etc/crontab
+            else
+                echo "The system upgrade command has been already added to the crontab, the command wasn't added a second time."
             fi
         ;;
         2)
@@ -243,9 +264,6 @@ function installation {
             2);;
         esac
     fi
-
-    echo ""
-    echo "Thanks for using me, bye!"
 }
 
 checkOS
