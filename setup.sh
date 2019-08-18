@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION=0.3.0
+VERSION=0.3.1
 DOCKER_COMPOSE_VERSION=1.24.1
 
 function isRoot {
@@ -19,7 +19,7 @@ function checkOS {
             DISTRIBUTION="ubuntu"
         ;;
         *)
-            echo "Sorry, this script works only with Debian and Ubuntu distributives :("
+            echo "Sorry, this script works only on Debian or Ubuntu."
             exit 1
         ;;
     esac
@@ -27,27 +27,11 @@ function checkOS {
 
 function installation {
     clear
-    echo "Welcome to Linux server setup (v. $VERSION) out there!"
-    echo "Thanks for using it, I really appreciate it!"
+    echo "Welcome to Linux setup (v. $VERSION) script!"
     echo "Repository is available at GitHub: https://github.com/unimarijo/linux-setup."
     echo ""
     echo "I need to ask you a few questions."
     echo "You can leave the default options and just press enter if you are OK with them."
-
-    if [ -e "/root/.linux_setup_installation" ]; then
-        echo ""
-        echo "An installation proccess has been run before, do you want to run it again?"
-        echo "WARNING: Running installation proccess multiple times can cause abnormal situations."
-        echo "    1) Default: no"
-        echo "    2) Yes"
-        until [[ "$INSTALLATION_CHOICE" =~ ^[1-2]$ ]]; do
-            read -rp "Please choose the right option for you [1-2]: " -e -i 1 INSTALLATION_CHOICE
-        done
-        case $INSTALLATION_CHOICE in
-            1) return ;;
-            2) ;;
-        esac
-    fi
 
     echo ""
     echo "Do you want to do full upgrade of the system (it can also add or remove packagages)?"
@@ -68,32 +52,6 @@ function installation {
             apt-get update && apt-get upgrade -y && apt-get autoclean -y && apt-get autoremove -y
         ;;
         3)
-        ;;
-    esac
-
-    DEFAULT_PACKAGES="mosh vnstat"
-    echo ""
-    echo "Do you want to install any additional packages?"
-    echo "INFO: You can install any other packages just by specifying them with space after each (e.g. mosh vnstat) instead of the number of option."
-    echo "    1) Default: $DEFAULT_PACKAGES"
-    echo "    2) Don't install any packages"
-    echo "    3) Other packages"
-    until [[ "$PACKAGES_CHOICE" =~ ^[1-3]$ ]]; do
-        read -rp "Please choose the right option for you [1-3]: " -e -i 1 PACKAGES_CHOICE
-    done
-    case $PACKAGES_CHOICE in
-        1)
-            echo "### Default packages ($DEFAULT_PACKAGES) are being installed ..."
-            # shellcheck disable=SC2086
-            apt-get install -y $DEFAULT_PACKAGES
-        ;;
-        2)
-        ;;
-        3)
-            read -rp "Please specify packages' names you want to install (with space after each): " -e SPECIFIED_PACKAGES
-            echo "### Specified packages ($SPECIFIED_PACKAGES) are being installed ..."
-            # shellcheck disable=SC2086
-            apt-get install -y $SPECIFIED_PACKAGES
         ;;
     esac
 
@@ -140,7 +98,7 @@ function installation {
     esac
 
     echo ""
-    echo "Do you want to install UFW (firewall) and set it up (disallow all ports except OpenSSH and Mosh)?"
+    echo "Do you want to install UFW (firewall) and set it up (disallow connections to all ports except OpenSSH and Mosh)?"
     echo "WARNING: It may disrupt existing SSH connections."
     echo "    1) Default: yes"
     echo "    2) No"
@@ -189,7 +147,8 @@ function installation {
     case $USER_CHOICE in
         1)
             if [ -e "/root/.ssh/authorized_keys" ]; then
-                read -rp "Specify a name for a new user: " NEW_USERNAME
+                apt-get install -y rsync
+                read -rp "Please specify a name for a new user: " NEW_USERNAME
                 adduser --disabled-password --gecos "" "$NEW_USERNAME" && usermod -aG sudo "$NEW_USERNAME"
                 rsync --archive --chown="$NEW_USERNAME:$NEW_USERNAME" ~/.ssh "/home/$NEW_USERNAME"
                 echo "$NEW_USERNAME ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
@@ -247,9 +206,6 @@ function installation {
         2)
         ;;
     esac
-
-    # Сreate a file so the script can determine that an installation proccess has been run before
-    touch "/root/.linux_setup_installation"
 
     if [ -n "$NEW_USERNAME" ]; then
         echo ""
