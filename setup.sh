@@ -55,7 +55,6 @@ function installation {
         ;;
     esac
 
-    CRONTAB_PACKAGES_UPGRADE_STRING="#!/bin/bash\n\napt-get update && apt-get upgrade -y && apt-get autoremove -y && apt-get autoclean -y"
     echo ""
     echo "Do you want to upgrade packages daily (without adding/removing any)?"
     echo "    1) Yes"
@@ -65,14 +64,13 @@ function installation {
     done
     case $CRON_PACKAGES_CHOICE in
         1)
-            printf "%s" "$CRONTAB_PACKAGES_UPGRADE_STRING" > /etc/cron.daily/packages-upgrade
+            printf "%s\n" "#!/bin/bash" "" "apt-get update && apt-get upgrade -y && apt-get autoremove -y && apt-get autoclean -y" > /etc/cron.daily/packages-upgrade
             chmod +x /etc/cron.daily/packages-upgrade
         ;;
         2)
         ;;
     esac
 
-    CRONTAB_FULL_UPGRADE_STRING="#!/bin/bash\n\napt-get update && apt-get dist-upgrade -y && apt-get autoremove -y && apt-get autoclean -y\nreboot"
     echo ""
     echo "Do you want to do full upgrade of the system weekly and reboot it after the completion?"
     echo "    1) Yes"
@@ -82,7 +80,7 @@ function installation {
     done
     case $CRON_SYSTEM_CHOICE in
         1)
-            printf "%s" "$CRONTAB_FULL_UPGRADE_STRING" > /etc/cron.weekly/full-upgrade
+            printf "%s\n" "#!/bin/bash" "" "apt-get update && apt-get dist-upgrade -y && apt-get autoremove -y && apt-get autoclean -y" "reboot" > /etc/cron.weekly/full-upgrade
             chmod +x /etc/cron.weekly/full-upgrade
         ;;
         2)
