@@ -1,16 +1,16 @@
 #!/bin/bash
 
-VERSION=0.3.1
+VERSION=0.4.0
 DOCKER_COMPOSE_VERSION=1.24.1
 
-function isRoot {
+function is_root {
     if [ "$EUID" -ne 0 ]; then
         echo "Sorry, you need to run this script as root."
         exit 1
     fi
 }
 
-function checkOS {
+function check_os {
     case $(lsb_release -is) in
         "Debian")
             DISTRIBUTION="debian"
@@ -19,7 +19,7 @@ function checkOS {
             DISTRIBUTION="ubuntu"
         ;;
         *)
-            echo "Sorry, this script works only on Debian or Ubuntu."
+            echo "Sorry, this script works only on Debian and Ubuntu distributives."
             exit 1
         ;;
     esac
@@ -28,23 +28,23 @@ function checkOS {
 function installation {
     clear
     echo "Welcome to Linux setup (v. $VERSION) script!"
-    echo "Repository is available at GitHub: https://github.com/unimarijo/linux-setup."
+    echo "The Git repository is available here: https://github.com/unimarijo/linux-setup."
     echo ""
-    echo "I need to ask you a few questions."
+    echo "You will be asked a few questions before the server will be ready."
     echo "You can leave the default options and just press enter if you are OK with them."
 
     echo ""
-    echo "Do you want to do full upgrade of the system (it can also add or remove packagages)?"
-    echo "TIP: Full upgrade is recommended on new systems."
-    echo "    1) Default: full upgrade"
-    echo "    2) Upgrade only"
-    echo "    3) Don't upgrade"
+    echo "Do you want to do full upgrade of the system (it can add and remove packages)?"
+    echo "TIP: Full upgrade is recommended on new systems so all packages will be up-to-date."
+    echo "    1) Full upgrade the system"
+    echo "    2) Packages upgrade"
+    echo "    3) Don't upgrade packages"
     until [[ "$UPGRADE_CHOICE" =~ ^[1-3]$ ]]; do
         read -rp "Please choose the right option for you [1-3]: " -e -i 1 UPGRADE_CHOICE
     done
     case $UPGRADE_CHOICE in
         1)
-            echo "### Packages are being upgraded and (if needed) added or removed ..."
+            echo "### Doing full upgrade of the system ..."
             apt-get update && apt-get dist-upgrade -y && apt-get autoclean -y && apt-get autoremove -y
         ;;
         2)
@@ -55,52 +55,44 @@ function installation {
         ;;
     esac
 
-    CRONTAB_PACKAGES_UPGRADE_STRING="25 3    * * *    root    apt-get update && apt-get upgrade -y && apt-get autoremove -y && apt-get autoclean -y"
+    CRONTAB_PACKAGES_UPGRADE_STRING="#!/bin/bash\n\napt-get update && apt-get upgrade -y && apt-get autoremove -y && apt-get autoclean -y"
     echo ""
     echo "Do you want to upgrade packages daily (without adding/removing any)?"
-    echo "INFO: Packages will be upgraded daily at 03:25, the command will be added to the crontab."
-    echo "    1) Default: yes"
+    echo "    1) Yes"
     echo "    2) No"
     until [[ "$CRON_PACKAGES_CHOICE" =~ ^[1-2]$ ]]; do
         read -rp "Please choose the right option for you [1-2]: " -e -i 1 CRON_PACKAGES_CHOICE
     done
     case $CRON_PACKAGES_CHOICE in
         1)
-            if ! grep -Fq "$CRONTAB_PACKAGES_UPGRADE_STRING" "/etc/crontab"; then
-                printf "\n# Upgrade packages\n%s" "$CRONTAB_PACKAGES_UPGRADE_STRING" >> /etc/crontab
-            else
-                echo "The packages upgrade command has been already added to the crontab, the command wasn't added a second time."
-            fi
+            printf "%s" "$CRONTAB_PACKAGES_UPGRADE_STRING" > /etc/cron.daily/packages-upgrade
+            chmod +x /etc/cron.daily/packages-upgrade
         ;;
         2)
         ;;
     esac
 
-    CRONTAB_SYSTEM_UPGRADE_STRING="47 4    * * 7    root    apt-get update && apt-get dist-upgrade -y && apt-get autoremove -y && apt-get autoclean -y && reboot"
+    CRONTAB_FULL_UPGRADE_STRING="#!/bin/bash\n\napt-get update && apt-get dist-upgrade -y && apt-get autoremove -y && apt-get autoclean -y\nreboot"
     echo ""
-    echo "Do you want to upgrade system weekly and reboot it after the completion?"
-    echo "INFO: System will be upgraded on Sundays at 04:47, the command will be added to the crontab."
-    echo "    1) Default: yes"
+    echo "Do you want to do full upgrade of the system weekly and reboot it after the completion?"
+    echo "    1) Yes"
     echo "    2) No"
     until [[ "$CRON_SYSTEM_CHOICE" =~ ^[1-2]$ ]]; do
         read -rp "Please choose the right option for you [1-2]: " -e -i 1 CRON_SYSTEM_CHOICE
     done
     case $CRON_SYSTEM_CHOICE in
         1)
-            if ! grep -Fq "$CRONTAB_SYSTEM_UPGRADE_STRING" "/etc/crontab"; then
-                printf "\n# Upgrade system\n%s" "$CRONTAB_SYSTEM_UPGRADE_STRING" >> /etc/crontab
-            else
-                echo "The system upgrade command has been already added to the crontab, the command wasn't added a second time."
-            fi
+            printf "%s" "$CRONTAB_FULL_UPGRADE_STRING" > /etc/cron.weekly/full-upgrade
+            chmod +x /etc/cron.weekly/full-upgrade
         ;;
         2)
         ;;
     esac
 
     echo ""
-    echo "Do you want to install UFW (firewall) and set it up (disallow connections to all ports except OpenSSH and Mosh)?"
+    echo "Do you want to install UFW (simple firewall) and set it up (disallow incoming connections to all ports except OpenSSH and Mosh)?"
     echo "WARNING: It may disrupt existing SSH connections."
-    echo "    1) Default: yes"
+    echo "    1) Yes"
     echo "    2) No"
     until [[ "$UFW_CHOICE" =~ ^[1-2]$ ]]; do
         read -rp "Please choose the right option for you [1-2]: " -e -i 1 UFW_CHOICE
@@ -116,8 +108,8 @@ function installation {
 
     echo ""
     echo "Do you want to disable password authentication for SSH?"
-    echo "INFO: You have to have your public key in /root/.ssh/authorized_keys if you want to disable password authentication."
-    echo "    1) Default: yes"
+    echo "INFO: You must have your public key in /root/.ssh/authorized_keys in order to disable password authentication."
+    echo "    1) Yes"
     echo "    2) No"
     until [[ "$PA_CHOICE" =~ ^[1-2]$ ]]; do
         read -rp "Please choose the right option for you [1-2]: " -e -i 1 PA_CHOICE
@@ -127,7 +119,7 @@ function installation {
             if [ -e "/root/.ssh/authorized_keys" ]; then
                 sed -i 's/#ChallengeResponseAuthentication.*/ChallengeResponseAuthentication no/' /etc/ssh/sshd_config
                 sed -i 's/#PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config
-                service ssh restart
+                systemctl restart ssh
             else
                 echo "You don't have a public key in /root/.ssh/authorized_keys, password authentication can't be disabled."
             fi
@@ -137,9 +129,9 @@ function installation {
     esac
 
     echo ""
-    echo "Do you want to create a new user with no password and sudo group (sudo command won't require any password)?"
-    echo "INFO: Public key for a new user will be synced with one in /root/.ssh/authorized_keys."
-    echo "    1) Default: yes"
+    echo "Do you want to create a new user with no password and sudo group, sudo won't require a password?"
+    echo "INFO: You must have public key authentictation enabled otherwise you won't be able to log in through SSH. The public key for a new user will be copied from /root/.ssh/authorized_keys."
+    echo "    1) Yes"
     echo "    2) No"
     until [[ "$USER_CHOICE" =~ ^[1-2]$ ]]; do
         read -rp "Please choose the right option for you [1-2]: " -e -i 1 USER_CHOICE
@@ -147,8 +139,10 @@ function installation {
     case $USER_CHOICE in
         1)
             if [ -e "/root/.ssh/authorized_keys" ]; then
-                apt-get install -y rsync
+                echo ""
                 read -rp "Please specify a name for a new user: " NEW_USERNAME
+
+                apt-get install -y rsync
                 adduser --disabled-password --gecos "" "$NEW_USERNAME" && usermod -aG sudo "$NEW_USERNAME"
                 rsync --archive --chown="$NEW_USERNAME:$NEW_USERNAME" ~/.ssh "/home/$NEW_USERNAME"
                 echo "$NEW_USERNAME ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
@@ -162,7 +156,8 @@ function installation {
 
     echo ""
     echo "Do you want to install Docker?"
-    echo "    1) Default: yes"
+    echo "INFO: Docker is a set of platform-as-a-service products that use OS-level virtualization to deliver software in packages called containers."
+    echo "    1) Yes"
     echo "    2) No"
     until [[ "$DOCKER_CHOICE" =~ ^[1-2]$ ]]; do
         read -rp "Please choose the right option for you [1-2]: " -e -i 1 DOCKER_CHOICE
@@ -170,15 +165,11 @@ function installation {
     case $DOCKER_CHOICE in
         1)
             echo "### Docker is being installed ..."
-            case $(uname -m) in
-                "x86_64")
-                    ARCHITECTURE="amd64"
-                ;;
-                *)
-                    ARCHITECTURE=$(uname -m)
-                ;;
-            esac
 
+            case $(uname -m) in
+                "x86_64") ARCHITECTURE="amd64";;
+                *) ARCHITECTURE=$(uname -m);;
+            esac
             apt-get install -y apt-transport-https ca-certificates curl software-properties-common gnupg2
             apt-get autoremove -y docker docker-engine docker.io containerd runc
             curl -fsSL "https://download.docker.com/linux/$DISTRIBUTION/gpg" | apt-key add -
@@ -191,8 +182,9 @@ function installation {
     esac
 
     echo ""
-    echo "Do you want to install docker-compose?"
-    echo "    1) Default: yes"
+    echo "Do you want to install Docker Compose?"
+    echo "INFO: Docker Compose is a tool for defining and running multi-container Docker applications."
+    echo "    1) Yes"
     echo "    2) No"
     until [[ "$DC_CHOICE" =~ ^[1-2]$ ]]; do
         read -rp "Please choose the right option for you [1-2]: " -e -i 1 DC_CHOICE
@@ -210,7 +202,7 @@ function installation {
     if [ -n "$NEW_USERNAME" ]; then
         echo ""
         echo "Do you want to continue using system as $NEW_USERNAME?"
-        echo "    1) Default: yes"
+        echo "    1) Yes"
         echo "    2) No"
         until [[ "$SU_CHOICE" =~ ^[1-2]$ ]]; do
             read -rp "Please choose the right option for you [1-2]: " -e -i 1 SU_CHOICE
@@ -222,6 +214,6 @@ function installation {
     fi
 }
 
-checkOS
-isRoot
+check_os
+is_root
 installation
